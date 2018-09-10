@@ -1,23 +1,24 @@
 <template>
-    <div class="login-container">
-        <section>
-            <b-field horizontal label="Name">
-                <b-input type="text" v-model="name"></b-input>
-            </b-field>
+  <div class="login-container">
+    <section>
+      <b-field horizontal label="Name">
+        <b-input type="text" v-model="name"></b-input>
+      </b-field>
 
-            <b-field horizontal>
-                <!-- Label left empty for spacing -->
-                <p class="control">
-                    <button class="button is-primary" @click="submit()">
-                        Enter
-                    </button>
-                </p>
-            </b-field>
+      <b-field horizontal>
+        <!-- Label left empty for spacing -->
+        <p class="control">
+          <button class="button is-primary" @click="submit()">
+            Enter
+          </button>
+        </p>
+      </b-field>
 
-        </section>
-    </div>
+    </section>
+  </div>
 </template>
 <script>
+import socket from "../utils/websocket";
 export default {
   data: function() {
     return {
@@ -37,8 +38,17 @@ export default {
         });
         return;
       }
+      socket.init("ws://localhost:3001/?token=" + this.name);
+      socket.onOpen(function() {
+        console.log("open");
+      });
+      socket.onClose(function() {
+        console.log("close");
+      });
+      socket.onMessage(function(event) {
+        console.log(event);
+      });
     }
-    
   }
 };
 </script>

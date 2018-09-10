@@ -1,15 +1,36 @@
 
-let instance = null;
-
+let socket = null;
+let openCallbacks = [];
+let closeCallbacks = [];
 let websocket = {
     init: function (url) {
-        instance = new websocket(url);
+        socket = new WebSocket(url);
     },
-    open: function () {
-       
+    onOpen: function (open) {
+        if (socket !== null) {
+            socket.addEventListener('open', function (event) {
+                open && open();
+                console.log(this === socket)
+            });
+        }
     },
-    getInstance:function(){
-        return instance;
+    onClose: function (close) {
+        if (socket !== null) {
+            socket.addEventListener('close', function (event) {
+                close && close();
+            });
+        }
+    },
+    onMessage: function (handle) {
+        if (socket !== null) {
+            socket.addEventListener('message', function (event) {
+                handle && handle(event);
+            });
+        }
+    },
+    getInstance: function () {
+        return socket;
     }
 }
+
 export default websocket
