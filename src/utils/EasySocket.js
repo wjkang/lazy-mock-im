@@ -1,6 +1,6 @@
 import compose from './compose';
 
-export default class LazyWebsocket {
+export default class EasySocket {
     static clients = new Map();
     constructor(name) {
         this.name = name;
@@ -38,7 +38,7 @@ export default class LazyWebsocket {
         this.socket.addEventListener('close', (event) => {
             let context = { socket: this.socket, event };
             closeFn(context).then(() => {
-                LazyWebsocket.clients.delete(this.name);
+                EasySocket.clients.delete(this.name);
                 this.socket = null;
             }).catch(error => {
                 console.log(error)
@@ -65,7 +65,7 @@ export default class LazyWebsocket {
             });
         });
 
-        LazyWebsocket.clients.set(this.name, this.socket);
+        EasySocket.clients.set(this.name, this.socket);
     }
 
 }

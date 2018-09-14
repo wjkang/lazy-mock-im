@@ -18,7 +18,7 @@
   </div>
 </template>
 <script>
-import socket from "../utils/LazyWebsocket";
+import EasySocket from "../utils/EasySocket";
 export default {
   data: function() {
     return {
@@ -38,7 +38,12 @@ export default {
         });
         return;
       }
-      
+      let socket = new EasySocket("im");
+      socket.openUse((context, next) => {
+        console.log("open");
+        next();
+      });
+      socket.connect("ws://localhost:3001/?user=" + this.name);
     }
   }
 };
