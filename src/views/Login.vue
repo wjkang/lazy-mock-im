@@ -18,7 +18,7 @@
   </div>
 </template>
 <script>
-import socket from "../utils/websocket";
+import socket from "../utils/LazyWebsocket";
 export default {
   data: function() {
     return {
@@ -38,16 +38,7 @@ export default {
         });
         return;
       }
-      socket.init("ws://localhost:3001/?token=" + this.name);
-      socket.onOpen(function() {
-        console.log("open");
-      });
-      socket.onClose(function() {
-        console.log("close");
-      });
-      socket.onMessage(function(event) {
-        console.log(event);
-      });
+      
     }
   }
 };
