@@ -65,7 +65,7 @@ export default class EasySocket {
             });
         });
 
-        EasySocket.clients.set(this.name, this.socket);
+        EasySocket.clients.set(this.name,this);
     }
 
 }
