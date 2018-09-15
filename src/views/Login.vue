@@ -38,9 +38,36 @@ export default {
         });
         return;
       }
+      if (EasySocket.clients.has("im")) {
+        this.$router.push("/");
+        return;
+      }
       let socket = new EasySocket("im");
       socket.openUse((context, next) => {
         console.log("open");
+        next();
+      });
+      socket.closeUse((context, next) => {
+        console.log("close");
+        next();
+      });
+      socket.errorUse((context, next) => {
+        console.log("error", context.event);
+        next();
+      });
+      socket.messageUse((context, next) => {
+        if (context.data.code == 500) {
+          this.$snackbar.open({
+            duration: 5000,
+            message: context.data.msg,
+            type: "is-warning",
+            position: "is-bottom",
+            actionText: "close",
+            queue: false
+          });
+        } else {
+          this.$router.push("/");
+        }
         next();
       });
       socket.connect("ws://localhost:3001/?user=" + this.name);

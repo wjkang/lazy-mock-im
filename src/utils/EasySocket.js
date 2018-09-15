@@ -26,7 +26,7 @@ export default class EasySocket {
         return this;
     }
     connect(url) {
-        this.socket = new WebSocket(url);
+        this.socket = new WebSocket(url,'echo-protocol');
 
         const openFn = compose(this.openMiddleware);
         this.socket.addEventListener('open', (event) => {
@@ -47,7 +47,7 @@ export default class EasySocket {
 
         const messageFn = compose(this.messageMiddleware);
         this.socket.addEventListener('message', (event) => {
-            let context = { socket: this.socket, event };
+            let context = { socket: this.socket, event,data:JSON.parse(event.data) };
             messageFn(context).then(() => {
 
             }).catch(error => {
