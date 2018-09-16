@@ -24,13 +24,18 @@ export default {
   name: "home",
   data: function() {
     return {
-      msg: ""
+      msg: "",
+      receives:[]
     };
   },
   methods: {
     submit() {
+      if (!EasySocket.clients.has("im")) {
+        this.$router.push("/login");
+        return;
+      }
       let client = EasySocket.clients.get("im");
-      client.socket.send(this.mag);
+      client.socket.send(this.msg);
     }
   }
 };

@@ -8,36 +8,50 @@ export default class EasySocket {
         this.closeMiddleware = [];
         this.messageMiddleware = [];
         this.errorMiddleware = [];
+
+        this.openFn = Promise.resolve();
+        this.closeFn = Promise.resolve();
+        this.messageFn = Promise.resolve();
+        this.errorFn = Promise.resolve();
     }
     openUse(fn) {
         this.openMiddleware.push(fn);
         return this;
     }
-    closeUse(fn) {
+    closeUse(fn, runtime) {
         this.closeMiddleware.push(fn);
+        if (runtime) {
+            this.closeFn = compose(this.closeMiddleware);
+        }
         return this;
     }
-    messageUse(fn) {
+    messageUse(fn, runtime) {
         this.messageMiddleware.push(fn);
+        if (runtime) {
+            this.messageFn = compose(this.messageMiddleware);
+        }
         return this;
     }
-    errorUse(fn) {
+    errorUse(fn, runtime) {
         this.errorMiddleware.push(fn);
+        if (runtime) {
+            this.errorFn = compose(this.errorMiddleware);
+        }
         return this;
     }
     connect(url) {
-        this.socket = new WebSocket(url,'echo-protocol');
+        this.socket = new WebSocket(url, 'echo-protocol');
 
-        const openFn = compose(this.openMiddleware);
+        this.openFn = compose(this.openMiddleware);
         this.socket.addEventListener('open', (event) => {
             let context = { socket: this.socket, event };
-            openFn(context).catch(error => { console.log(error) });
+            this.openFn(context).catch(error => { console.log(error) });
         });
 
-        const closeFn = compose(this.closeMiddleware);
+        this.closeFn = compose(this.closeMiddleware);
         this.socket.addEventListener('close', (event) => {
             let context = { socket: this.socket, event };
-            closeFn(context).then(() => {
+            this.closeFn(context).then(() => {
                 EasySocket.clients.delete(this.name);
                 this.socket = null;
             }).catch(error => {
@@ -45,27 +59,33 @@ export default class EasySocket {
             });
         });
 
-        const messageFn = compose(this.messageMiddleware);
+        this.messageFn = compose(this.messageMiddleware);
         this.socket.addEventListener('message', (event) => {
-            let context = { socket: this.socket, event,data:JSON.parse(event.data) };
-            messageFn(context).then(() => {
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (error) {
+                data = event.data;
+            }
+            let context = { socket: this.socket, event, data };
+            this.messageFn(context).then(() => {
 
             }).catch(error => {
                 console.log(error)
             });
         });
 
-        const errorFn = compose(this.errorMiddleware);
+        this.errorFn = compose(this.errorMiddleware);
         this.socket.addEventListener('error', (event) => {
             let context = { socket: this.socket, event };
-            errorFn(context).then(() => {
+            this.errorFn(context).then(() => {
 
             }).catch(error => {
                 console.log(error)
             });
         });
 
-        EasySocket.clients.set(this.name,this);
+        EasySocket.clients.set(this.name, this);
     }
 
 }
