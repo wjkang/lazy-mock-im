@@ -16,6 +16,8 @@ export default class EasySocket extends Emitter {
         this.closeFn = Promise.resolve();
         this.messageFn = Promise.resolve();
         this.errorFn = Promise.resolve();
+
+        EasySocket.clients.set(this.name, this);
     }
     openUse(fn) {
         this.openMiddleware.push(fn);
@@ -55,9 +57,9 @@ export default class EasySocket extends Emitter {
         this.socket.addEventListener('close', (event) => {
             let context = { client: this, event };
             this.closeFn(context).then(() => {
-                EasySocket.clients.delete(this.name);
-                this.socket = null;
-                this.connected = false;
+                // EasySocket.clients.delete(this.name);
+                // this.socket = null;
+                // this.connected = false;
             }).catch(error => {
                 console.log(error)
             });
@@ -65,13 +67,13 @@ export default class EasySocket extends Emitter {
 
         this.messageFn = compose(this.messageMiddleware);
         this.socket.addEventListener('message', (event) => {
-            let data;
+            let res;
             try {
-                data = JSON.parse(event.data);
+                res = JSON.parse(event.data);
             } catch (error) {
-                data = event.data;
+                res = event.data;
             }
-            let context = { client: this, event, data };
+            let context = { client: this, event, res };
             this.messageFn(context).then(() => {
 
             }).catch(error => {
@@ -88,8 +90,6 @@ export default class EasySocket extends Emitter {
                 console.log(error)
             });
         });
-
-        EasySocket.clients.set(this.name, this);
         this.connected = true;
         return this;
     }

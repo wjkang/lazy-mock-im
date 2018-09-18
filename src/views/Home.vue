@@ -25,18 +25,39 @@ export default {
   data: function() {
     return {
       msg: "",
-      receives:[]
+      receives: []
     };
   },
   methods: {
     submit() {
-      if (!EasySocket.clients.has("im")) {
+      if (!this.$wsClients.has("im")) {
         this.$router.push("/login");
         return;
       }
-      let client = EasySocket.clients.get("im");
+      let client = this.$wsClients.get("im");
       client.socket.send(this.msg);
     }
+  },
+  mounted() {
+    if (!this.$wsClients.has("im")) {
+      this.$router.push("/login");
+      return;
+    }
+    let client = this.$wsClients.get("im");
+  },
+  activated() {
+    if (!this.$wsClients.has("im")) {
+      this.$router.push("/login");
+      return;
+    }
+  },
+  destroyed() {
+    let client = this.$wsClients.get("im");
+    client.removeAllListeners();
+  },
+  deactivated() {
+    let client = this.$wsClients.get("im");
+    client.removeAllListeners();
   }
 };
 </script>
