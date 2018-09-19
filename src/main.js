@@ -7,7 +7,7 @@ import EasySocket from "./utils/EasySocket"
 
 Vue.config.productionTip = false
 
-Vue.prototype.$wsClients=EasySocket.clients;
+Vue.prototype.$wsClients = EasySocket.clients;
 
 Vue.use(Buefy)
 
@@ -32,4 +32,13 @@ new EasySocket("im")
       context.client.emit(context.res.event, context.res.args, true);
     }
     next();
-  });;
+  }).remoteEmitUse((context, next) => {
+    let client = context.client;
+    let event = context.event;
+    client.socket.send(JSON.stringify({
+      type: 'event',
+      event: event.event,
+      args: event.args
+    }));
+    next();
+  });

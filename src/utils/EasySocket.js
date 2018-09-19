@@ -11,11 +11,13 @@ export default class EasySocket extends Emitter {
         this.closeMiddleware = [];
         this.messageMiddleware = [];
         this.errorMiddleware = [];
+        this.remoteEmitMiddleware = [];
 
         this.openFn = Promise.resolve();
         this.closeFn = Promise.resolve();
         this.messageFn = Promise.resolve();
         this.errorFn = Promise.resolve();
+        this.remoteEmitFn = Promise.resolve();
 
         EasySocket.clients.set(this.name, this);
     }
@@ -41,6 +43,13 @@ export default class EasySocket extends Emitter {
         this.errorMiddleware.push(fn);
         if (runtime) {
             this.errorFn = compose(this.errorMiddleware);
+        }
+        return this;
+    }
+    remoteEmitUse(fn, runtime) {
+        this.remoteEmitMiddleware.push(fn);
+        if (runtime) {
+            this.remoteEmitFn = compose(this.remoteEmitMiddleware);
         }
         return this;
     }
@@ -90,6 +99,8 @@ export default class EasySocket extends Emitter {
                 console.log(error)
             });
         });
+
+        this.remoteEmitFn = compose(this.remoteEmitMiddleware);
         this.connected = true;
         return this;
     }
@@ -103,8 +114,12 @@ export default class EasySocket extends Emitter {
         if (!this.connected) {
             throw new Error('unconnected');
         }
-        let data = JSON.stringify(arr);
-        this.socket.send(data);
+        let evt = {
+            event: event,
+            args: args
+        }
+        let remoteEmitContext = { client: this, event: evt };
+        this.remoteEmitFn(remoteEmitContext).catch(error => { console.log(error) })
         return this;
     }
 

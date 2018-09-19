@@ -30,23 +30,23 @@ export default {
   },
   methods: {
     submit() {
-      if (!this.$wsClients.has("im")) {
-        this.$router.push("/login");
-        return;
-      }
       let client = this.$wsClients.get("im");
-      client.socket.send(this.msg);
+      client.emit("chat message", this.msg);
     }
   },
   mounted() {
-    if (!this.$wsClients.has("im")) {
+    let client = this.$wsClients.get("im");
+    if (!client || !client.connected) {
       this.$router.push("/login");
       return;
     }
-    let client = this.$wsClients.get("im");
+    client.on("chat message", data => {
+      console.log('receive:'+data);
+    });
   },
   activated() {
-    if (!this.$wsClients.has("im")) {
+    let client = this.$wsClients.get("im");
+    if (!client || !client.connected) {
       this.$router.push("/login");
       return;
     }
