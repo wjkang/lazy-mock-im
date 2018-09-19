@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <section class="msg-container">
+    <section class="msg-container" v-show="receives.length>0">
       <div class="tile is-parent is-vertical">
         <article class="tile is-child notification is-primary" v-for="(item,index) in receives" :key="index">
           <p class="title">{{item.name}}</p>
@@ -16,9 +16,8 @@
       <b-field horizontal>
         <!-- Label left empty for spacing -->
         <p class="control">
-          <button class="button is-primary" @click="submit()">
-            send
-          </button>
+          <button class="button is-primary" @click="submitMsg()">send</button>&nbsp;&nbsp;
+          <button class="button is-info" @click="clearMsg()">clear</button>
         </p>
       </b-field>
 
@@ -36,12 +35,15 @@ export default {
     };
   },
   methods: {
-    submit() {
+    submitMsg() {
       let client = this.$wsClients.get("im");
-      client.emit("chat message",{
-        name:'xxxx',
-        msg:this.msg
+      client.emit("chat message", {
+        name: "xxxx",
+        msg: this.msg
       });
+    },
+    clearMsg() {
+      this.receives=[];
     }
   },
   mounted() {
@@ -84,9 +86,18 @@ export default {
   border-radius: 2px;
 }
 .msg-control {
+  padding-top: 20px;
   padding-right: 50px;
 }
 .msg-container {
   text-align: left;
+  background-color: #f1eef5;
+  border-radius: 10px;
+  max-height: 500px;
+  padding: 10px;
+  overflow: auto;
+  article {
+    width: 80%;
+  }
 }
 </style>
