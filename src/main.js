@@ -2,8 +2,9 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import Buefy from 'buefy'
-import 'buefy/dist/buefy.css'
+import 'buefy/lib/buefy.css'
 import EasySocket from "./utils/EasySocket"
+import {Toast} from 'buefy'
 
 Vue.config.productionTip = false
 
@@ -35,10 +36,22 @@ new EasySocket("im")
   }).remoteEmitUse((context, next) => {
     let client = context.client;
     let event = context.event;
-    client.socket.send(JSON.stringify({
-      type: 'event',
-      event: event.event,
-      args: event.args
-    }));
-    next();
+    console.log(client.socket.readyState)
+    if (client.socket.readyState !== 1) {
+      Toast.open({
+        duration: 5000,
+        message: "连接已断开!",
+        type: "is-warning",
+        position: "is-bottom",
+        actionText: "close",
+        queue: false
+      });
+    } else {
+      client.socket.send(JSON.stringify({
+        type: 'event',
+        event: event.event,
+        args: event.args
+      }));
+      next();
+    }
   });

@@ -1,6 +1,14 @@
 <template>
   <div class="home">
-    <section>
+    <section class="msg-container">
+      <div class="tile is-parent is-vertical">
+        <article class="tile is-child notification is-primary" v-for="(item,index) in receives" :key="index">
+          <p class="title">{{item.name}}</p>
+          <p class="subtitle">{{item.msg}}</p>
+        </article>
+      </div>
+    </section>
+    <section class="msg-control">
       <b-field horizontal label="msg">
         <b-input type="text" v-model="msg"></b-input>
       </b-field>
@@ -9,7 +17,7 @@
         <!-- Label left empty for spacing -->
         <p class="control">
           <button class="button is-primary" @click="submit()">
-            Enter
+            send
           </button>
         </p>
       </b-field>
@@ -19,7 +27,6 @@
 </template>
 
 <script>
-import EasySocket from "../utils/EasySocket";
 export default {
   name: "home",
   data: function() {
@@ -31,7 +38,10 @@ export default {
   methods: {
     submit() {
       let client = this.$wsClients.get("im");
-      client.emit("chat message", this.msg);
+      client.emit("chat message",{
+        name:'xxxx',
+        msg:this.msg
+      });
     }
   },
   mounted() {
@@ -41,7 +51,7 @@ export default {
       return;
     }
     client.on("chat message", data => {
-      console.log('receive:'+data);
+      this.receives.push(data);
     });
   },
   activated() {
@@ -61,3 +71,22 @@ export default {
   }
 };
 </script>
+<style lang="less" scoped>
+.home {
+  position: absolute;
+  width: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 13px 16px;
+  font-size: 14px;
+  color: #ccc;
+  border-radius: 2px;
+}
+.msg-control {
+  padding-right: 50px;
+}
+.msg-container {
+  text-align: left;
+}
+</style>
