@@ -5,7 +5,13 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
     state: {
-        count: 0
+        user: {
+            id:'',
+            name:''
+        },
+        userList:[],
+        roomList:[],
+        rootUserList:[]
     },
     mutations: {
         increment(state) {
