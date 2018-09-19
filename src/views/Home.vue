@@ -55,6 +55,9 @@ export default {
     client.on("chat message", data => {
       this.receives.push(data);
     });
+    client.on("user login", data => {
+      console.log(data);
+    });
   },
   activated() {
     let client = this.$wsClients.get("im");
