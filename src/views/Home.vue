@@ -202,6 +202,7 @@ export default {
 }
 .left {
   max-height: 700px;
+  text-align: left;
   overflow: auto;
 }
 .msg-control {
