@@ -57,7 +57,11 @@ export default {
         queue: false
       });
     });
-    client.on("loginSuccess", () => {
+    client.on("loginSuccess", data => {
+      this.$store.commit("initAppData", {
+        user: data.user,
+        userList: data.userList
+      });
       this.$router.push("/");
     });
   }
