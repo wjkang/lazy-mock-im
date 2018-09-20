@@ -81,7 +81,7 @@
       <div class="main column">
         <section class="msg-container">
           <div class="tile is-parent is-vertical">
-            <article class="tile is-child notification is-primary" v-for="(item,index) in receives" :key="index">
+            <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
               <p class="title">{{item.name}}</p>
               <p class="subtitle">{{item.msg}}</p>
             </article>
@@ -119,14 +119,18 @@ export default {
   data: function() {
     return {
       msg: "",
-      receives: []
+      receives: [],
+      user: this.$store.state.user
     };
   },
   methods: {
     submitMsg() {
       let client = this.$wsClients.get("im");
       client.emit("chat message", {
-        name: "xxxx",
+        from: {
+          id: this.user.id,
+          name: this.user.name
+        },
         msg: this.msg
       });
     },
@@ -141,10 +145,15 @@ export default {
       return;
     }
     client.on("chat message", data => {
-      this.receives.push(data);
+      let isSelf = data.from.id == this.user.id;
+      this.receives.push({
+        name: data.from.name,
+        msg: data.msg,
+        isSelf
+      });
     });
     client.on("user login", user => {
-      console.log(1)
+      console.log(1);
       this.$snackbar.open({
         duration: 5000,
         message: `${user.name} enter...`,
@@ -167,7 +176,7 @@ export default {
         actionText: "close",
         queue: false
       });
-      this.$store.commit("delUser",user.id);
+      this.$store.commit("delUser", user.id);
     });
   },
   activated() {
@@ -210,5 +219,9 @@ export default {
   article {
     width: 80%;
   }
+}
+.self-msg{
+  align-self: flex-end;
+  text-align: right;
 }
 </style>
