@@ -161,9 +161,16 @@ export default {
             : { room: this.currentChatRoom };
       }
       client.emit("chat message", msg);
+      this.msg = "";
     },
     clearMsg() {
       this.receives = [];
+      if (this.currentChatUser.id) {
+        let chatUserMsg = this.userMassageList.find(item => {
+          return item.id == user.id;
+        });
+        chatUserMsg.msgs = [];
+      }
     },
     changeChatUser(user) {
       let chatUserMsg = this.userMassageList.find(item => {
