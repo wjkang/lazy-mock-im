@@ -18,6 +18,7 @@
   </div>
 </template>
 <script>
+import baseUrl from '../baseUrl';
 export default {
   data: function() {
     return {
@@ -38,7 +39,7 @@ export default {
         return;
       }
       let client = this.$wsClients.get("im");
-      client.connect("ws://localhost:3001/?user=" + this.name);
+      client.connect(baseUrl+"?user=" + this.name);
     }
   },
   mounted() {
