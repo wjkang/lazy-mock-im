@@ -28,6 +28,27 @@ const store = new Vuex.Store({
                     break;
                 }
             }
+        },
+        updateUserMsgCount(state, user) {
+            let s = state.userList.find((item) => {
+                return item.id == user.id;
+            });
+            let index = state.userList.findIndex((item) => {
+                return item.id == user.id;
+            });
+            s.msgCount = s.msgCount || 0;
+            s.msgCount++;
+            Vue.set(state.userList, index, s)
+        },
+        resetUserMsgCount(state, user) {
+            let s = state.userList.find((item) => {
+                return item.id == user.id;
+            });
+            let index = state.userList.findIndex((item) => {
+                return item.id == user.id;
+            });
+            s.msgCount = 0;
+            Vue.set(state.userList, index, s)
         }
     }
 });

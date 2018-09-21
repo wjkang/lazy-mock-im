@@ -76,10 +76,11 @@
     </nav>
     <div class="columns main-container">
       <div class="left column is-2">
-        <user-list></user-list>
+        <user-list :userList="userList" :currentUser="user" @changeChatUser="changeChatUser" />
       </div>
       <div class="main column">
         <section class="msg-container">
+          <span class="tag is-primary is-medium chat-with" v-show="currentChatUser.id">Chat With {{currentChatUser.name}}</span>
           <div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
               <p class="title">{{item.name}}</p>
@@ -120,22 +121,65 @@ export default {
     return {
       msg: "",
       receives: [],
-      user: this.$store.state.user
+      user: this.$store.state.user,
+      currentChatUser: {
+        id: "",
+        name: ""
+      },
+      currentChatRoom: {
+        id: "",
+        name: ""
+      },
+      chatType: 0,
+      userMassageList: []
     };
+  },
+  computed: {
+    userList() {
+      return this.$store.state.userList;
+    }
   },
   methods: {
     submitMsg() {
+      if (this.msg == "") {
+        return;
+      }
       let client = this.$wsClients.get("im");
-      client.emit("chat message", {
+      let msg = {
+        type: this.chatType,
+        msg: this.msg,
         from: {
           id: this.user.id,
           name: this.user.name
-        },
-        msg: this.msg
-      });
+        }
+      };
+      //type broadcast=0,private chat=1,room chat=2, default 0
+      if (this.chatType > 0) {
+        msg.to =
+          this.chatType == 1
+            ? { user: this.currentChatUser }
+            : { room: this.currentChatRoom };
+      }
+      client.emit("chat message", msg);
     },
     clearMsg() {
       this.receives = [];
+    },
+    changeChatUser(user) {
+      let chatUserMsg = this.userMassageList.find(item => {
+        return item.id == user.id;
+      });
+      if (!chatUserMsg) {
+        chatUserMsg = {
+          id: user.id,
+          msgs: []
+        };
+        this.userMassageList.push(chatUserMsg);
+      }
+      this.receives = chatUserMsg.msgs;
+      this.chatType = 1;
+      this.currentChatUser = { ...user };
+      this.$store.commit("resetUserMsgCount", { ...user });
     }
   },
   mounted() {
@@ -146,14 +190,54 @@ export default {
     }
     client.on("chat message", data => {
       let isSelf = data.from.id == this.user.id;
-      this.receives.push({
-        name: data.from.name,
-        msg: data.msg,
-        isSelf
-      });
+      if (data.type > 0) {
+        if (data.type == 1) {
+          if (this.currentChatUser.id != data.from.id && !isSelf) {
+            this.$store.commit("updateUserMsgCount", { ...data.from });
+            let chatUserMsg = this.userMassageList.find(item => {
+              return item.id == data.from.id;
+            });
+            if (!chatUserMsg) {
+              chatUserMsg = {
+                id: data.from.id,
+                msgs: []
+              };
+              this.userMassageList.push(chatUserMsg);
+            }
+            chatUserMsg.msgs.push({
+              name: data.from.name,
+              msg: data.msg,
+              isSelf
+            });
+          } else {
+            if (!isSelf) {
+              let chatUserMsg = this.userMassageList.find(item => {
+                return item.id == data.from.id;
+              });
+              chatUserMsg.msgs.push({
+                name: data.from.name,
+                msg: data.msg,
+                isSelf
+              });
+            }
+            this.receives.push({
+              name: data.from.name,
+              msg: data.msg,
+              isSelf
+            });
+          }
+        }
+      } else {
+        if (!this.currentChatUser.id) {
+          this.receives.push({
+            name: data.from.name,
+            msg: data.msg,
+            isSelf
+          });
+        }
+      }
     });
     client.on("user login", user => {
-      console.log(1);
       this.$snackbar.open({
         duration: 5000,
         message: `${user.name} enter...`,
@@ -210,6 +294,7 @@ export default {
   padding-right: 50px;
 }
 .msg-container {
+  position: relative;
   text-align: left;
   background-color: #f1eef5;
   border-radius: 10px;
@@ -217,11 +302,16 @@ export default {
   height: 500px;
   padding: 10px;
   overflow: auto;
+  .chat-with {
+    position: absolute;
+    z-index: 999;
+    opacity: 0.3;
+  }
   article {
     width: 80%;
   }
 }
-.self-msg{
+.self-msg {
   align-self: flex-end;
   text-align: right;
 }
