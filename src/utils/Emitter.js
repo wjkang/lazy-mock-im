@@ -2,23 +2,7 @@
  * copy from https://github.com/component/emitter
  */
 
-/**
- * Expose `Emitter`.
- */
 
-if (typeof module !== 'undefined') {
-    module.exports = Emitter;
-}
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-    if (obj) return mixin(obj);
-};
 
 /**
  * Mixin the emitter properties.
@@ -170,4 +154,8 @@ Emitter.prototype.listeners = function (event) {
 
 Emitter.prototype.hasListeners = function (event) {
     return !!this.listeners(event).length;
+};
+
+export default function Emitter(obj) {
+    if (obj) return mixin(obj);
 };
