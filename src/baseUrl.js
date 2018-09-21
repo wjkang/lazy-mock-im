@@ -4,7 +4,7 @@ switch (process.env.NODE_ENV) {
         baseUrl = "ws://localhost:3001/" 
         break
     case 'production':
-        baseUrl = "ws://localhost:3001/"   
+        baseUrl = "ws://69.171.69.13:3002/"   
         break
 }
 
