@@ -89,8 +89,12 @@
           </div>
         </section>
         <section class="msg-control">
-          <b-field horizontal label="msg">
-            <b-input type="text" v-model="msg"></b-input>
+          <b-field horizontal label="chat">
+            <b-input type="textarea"
+                v-model="msg"
+                maxlength="500"
+            >
+            </b-input>
           </b-field>
 
           <b-field horizontal>
@@ -167,7 +171,7 @@ export default {
       this.receives = [];
       if (this.currentChatUser.id) {
         let chatUserMsg = this.userMassageList.find(item => {
-          return item.id == user.id;
+          return item.id == this.currentChatUser.id;
         });
         chatUserMsg.msgs = [];
       }
@@ -183,7 +187,7 @@ export default {
         };
         this.userMassageList.push(chatUserMsg);
       }
-      this.receives = chatUserMsg.msgs;
+      this.receives = [...chatUserMsg.msgs];
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
