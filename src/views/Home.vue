@@ -76,11 +76,13 @@
     </nav>
     <div class="columns main-container">
       <div class="left column is-2">
-        <user-list :userList="userList" :currentUser="user" @changeChatUser="changeChatUser" />
+        <user-list :userList="userList" :currentUser="user" :chatUser="currentChatUser" @changeChatUser="changeChatUser" />
       </div>
       <div class="main column">
+        <span class="tag is-primary is-medium chat-with" v-show="currentChatUser.id">Chat With {{currentChatUser.name}}
+          <button class="delete is-small" @click="closeChat"></button>
+        </span>
         <section class="msg-container">
-          <span class="tag is-primary is-medium chat-with" v-show="currentChatUser.id">Chat With {{currentChatUser.name}}</span>
           <div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
               <p class="title">{{item.name}}</p>
@@ -90,10 +92,7 @@
         </section>
         <section class="msg-control">
           <b-field horizontal label="chat">
-            <b-input type="textarea"
-                v-model="msg"
-                maxlength="500"
-            >
+            <b-input type="textarea" v-model="msg" maxlength="500">
             </b-input>
           </b-field>
 
@@ -108,7 +107,7 @@
         </section>
       </div>
       <div class="right column is-2">
-
+        <room-list :chatRoom="currentChatRoom" @changeChatRoom="changeChatRoom" />
       </div>
     </div>
   </div>
@@ -116,10 +115,12 @@
 
 <script>
 import UserList from "../components/UserList.vue";
+import RoomList from "../components/RoomList.vue";
 export default {
   name: "home",
   components: {
-    UserList
+    UserList,
+    RoomList
   },
   data: function() {
     return {
@@ -191,6 +192,25 @@ export default {
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
+    },
+    closeChat() {
+      this.receives = [];
+      this.chatType = 0;
+      this.currentChatUser = {
+        id: "",
+        name: ""
+      };
+    },
+    changeChatRoom(room) {
+      this.currentChatRoom = { ...room };
+    },
+    closeRoomChat() {
+      this.receives = [];
+      this.chatType = 0;
+      this.currentChatRoom = {
+        id: "",
+        name: ""
+      };
     }
   },
   mounted() {
@@ -300,24 +320,28 @@ export default {
   text-align: left;
   overflow: auto;
 }
+.main {
+  position: relative;
+  .chat-with {
+    position: absolute;
+    z-index: 999;
+    opacity: 0.3;
+    right: 10px;
+  }
+}
 .msg-control {
   padding-top: 20px;
   padding-right: 50px;
 }
 .msg-container {
-  position: relative;
   text-align: left;
   background-color: #f1eef5;
   border-radius: 10px;
   max-height: 500px;
   height: 500px;
   padding: 10px;
+  margin-top: 35px;
   overflow: auto;
-  .chat-with {
-    position: absolute;
-    z-index: 999;
-    opacity: 0.3;
-  }
   article {
     width: 80%;
   }

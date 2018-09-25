@@ -49,7 +49,18 @@ const store = new Vuex.Store({
             });
             s.msgCount = 0;
             Vue.set(state.userList, index, s)
-        }
+        },
+        addRoom(state, room) {
+            state.roomList.push(room);
+        },
+        delRoom(state, id) {
+            for (let i = 0; i < state.roomList.length; i++) {
+                if (state.roomList[i].id == id) {
+                    state.roomList.splice(i, 1);
+                    break;
+                }
+            }
+        },
     }
 });
 
