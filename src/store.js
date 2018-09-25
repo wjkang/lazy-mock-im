@@ -61,6 +61,21 @@ const store = new Vuex.Store({
                 }
             }
         },
+        addRoomUser(state, data) {
+            let room = state.roomList.find((room) => {
+                return room.id == data.room.id;
+            });
+            room.userList.push({ ...data.user });
+        },
+        delRoomUser(state, data) {
+            let room = state.roomList.find((room) => {
+                return room.id == data.room.id;
+            });
+            let userIndex = room.userList.findIndex((user) => {
+                return user.id == data.user.id;
+            });
+            room.userList.splice(userIndex, 1);
+        }
     }
 });
 

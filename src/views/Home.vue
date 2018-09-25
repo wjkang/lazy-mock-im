@@ -82,6 +82,9 @@
         <span class="tag is-primary is-medium chat-with" v-show="currentChatUser.id">Chat With {{currentChatUser.name}}
           <button class="delete is-small" @click="closeChat"></button>
         </span>
+        <span class="tag is-primary is-medium chat-with" v-show="currentChatRoom.id">Chat In {{currentChatRoom.name}}
+          <button class="delete is-small" @click="closeRoomChat"></button>
+        </span>
         <section class="msg-container">
           <div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
@@ -106,7 +109,7 @@
 
         </section>
       </div>
-      <div class="right column is-2">
+      <div class="right column is-2" style="text-align:left">
         <room-list :chatRoom="currentChatRoom" @changeChatRoom="changeChatRoom" />
       </div>
     </div>
@@ -202,9 +205,21 @@ export default {
       };
     },
     changeChatRoom(room) {
+      this.receives = [];
+      this.chatType = 2;
+      this.currentChatUser = {
+        id: "",
+        name: ""
+      };
       this.currentChatRoom = { ...room };
     },
     closeRoomChat() {
+      let client = this.$wsClients.get("im");
+      client.emit("leaveRoom", {
+        //type:this.chatType,
+        user: { ...this.user },
+        room: { ...this.currentChatRoom }
+      });
       this.receives = [];
       this.chatType = 0;
       this.currentChatRoom = {
