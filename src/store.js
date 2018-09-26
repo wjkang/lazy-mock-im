@@ -10,13 +10,13 @@ const store = new Vuex.Store({
             name: ''
         },
         userList: [],
-        roomList: [],
-        rootUserList: []
+        roomList: []
     },
     mutations: {
         initAppData(state, data) {
             state.user = data.user;
             state.userList = data.userList;
+            state.roomList = data.roomList;
         },
         addUser(state, user) {
             state.userList.push(user);

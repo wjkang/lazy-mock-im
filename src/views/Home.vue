@@ -191,10 +191,14 @@ export default {
         };
         this.userMassageList.push(chatUserMsg);
       }
+      if(this.currentChatRoom.id){
+        this.closeRoomChat();
+      }
       this.receives = [...chatUserMsg.msgs];
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
+      
     },
     closeChat() {
       this.receives = [];
@@ -205,6 +209,9 @@ export default {
       };
     },
     changeChatRoom(room) {
+      if(this.currentChatUser.id){
+        this.closeChat();
+      }
       this.receives = [];
       this.chatType = 2;
       this.currentChatUser = {
@@ -272,6 +279,12 @@ export default {
               isSelf
             });
           }
+        } else if (data.type == 2) {
+          this.receives.push({
+            name: data.from.name,
+            msg: data.msg,
+            isSelf
+          });
         }
       } else {
         if (!this.currentChatUser.id) {
