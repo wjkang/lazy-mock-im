@@ -45,34 +45,24 @@
 <script>
 import "../style/bulma.badge.css";
 export default {
-  data() {
-    return {
-      chatUser: {
-        id: "",
-        name: ""
-      }
-    };
-  },
   props: {
     userList: Array,
-    currentUser: Object
+    currentUser: Object,
+    chatUser: Object
   },
   methods: {
     changeChatUser(user) {
       if (this.chatUser.id == user.id) {
         return;
       }
-      this.chatUser = {
-        ...user
-      };
       this.$emit("changeChatUser", { ...user });
     }
   }
 };
 </script>
 <style lang="less" scoped>
-.menu-list li{
-    width: 80%;
+.menu-list li {
+  width: 80%;
 }
 .is-inactive {
   cursor: not-allowed;

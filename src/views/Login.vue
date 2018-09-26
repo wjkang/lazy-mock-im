@@ -61,7 +61,8 @@ export default {
     client.on("loginSuccess", data => {
       this.$store.commit("initAppData", {
         user: data.user,
-        userList: data.userList
+        userList: data.userList,
+        roomList:data.roomList
       });
       this.$router.push("/");
     });
