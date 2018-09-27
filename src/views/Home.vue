@@ -3,48 +3,28 @@
     <nav class="navbar is-transparent">
       <div class="navbar-brand">
         <a class="navbar-item" href="https://bulma.io">
-          <img src="https://bulma.io/images/bulma-logo.png" alt="Bulma: a modern CSS framework based on Flexbox" width="112" height="28">
+          <img src="https://avatars3.githubusercontent.com/u/9456046?s=460&v=4" alt="" width="28" height="28">
         </a>
-        <div class="navbar-burger burger" data-target="navbarExampleTransparentExample">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
       </div>
 
       <div id="navbarExampleTransparentExample" class="navbar-menu">
         <div class="navbar-start">
-          <a class="navbar-item" href="https://bulma.io/">
-            Home
-          </a>
-          <div class="navbar-item has-dropdown is-hoverable">
-            <a class="navbar-link" href="/documentation/overview/start/">
-              Docs
+          <div class="navbar-item">
+            <a class="bd-tw-button button" href="https://github.com/wjkang/lazy-mock" target="_blank">
+              lazy-mock
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://github.com/wjkang/easy-socket-node" target="_blank">
+              easy-socket
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://github.com/websockets/ws" target="_blank">
+              ws
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://bulma.io/" target="_blank">
+              bulma
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://buefy.github.io/" target="_blank">
+              buefy
             </a>
-            <div class="navbar-dropdown is-boxed">
-              <a class="navbar-item" href="/documentation/overview/start/">
-                Overview
-              </a>
-              <a class="navbar-item" href="https://bulma.io/documentation/modifiers/syntax/">
-                Modifiers
-              </a>
-              <a class="navbar-item" href="https://bulma.io/documentation/columns/basics/">
-                Columns
-              </a>
-              <a class="navbar-item" href="https://bulma.io/documentation/layout/container/">
-                Layout
-              </a>
-              <a class="navbar-item" href="https://bulma.io/documentation/form/general/">
-                Form
-              </a>
-              <hr class="navbar-divider">
-              <a class="navbar-item" href="https://bulma.io/documentation/elements/box/">
-                Elements
-              </a>
-              <a class="navbar-item is-active" href="https://bulma.io/documentation/components/breadcrumb/">
-                Components
-              </a>
-            </div>
           </div>
         </div>
 
@@ -52,21 +32,13 @@
           <div class="navbar-item">
             <div class="field is-grouped">
               <p class="control">
-                <a class="bd-tw-button button" data-social-network="Twitter" data-social-action="tweet" data-social-target="http://localhost:4000" target="_blank" href="https://twitter.com/intent/tweet?text=Bulma: a modern CSS framework based on Flexbox&amp;hashtags=bulmaio&amp;url=http://localhost:4000&amp;via=jgthms">
-                  <span class="icon">
-                    <i class="fab fa-twitter"></i>
-                  </span>
-                  <span>
-                    Tweet
-                  </span>
+                <a class="bd-tw-button button" href="https://github.com/wjkang/lazy-mock-im" target="_blank">
+                  Github
                 </a>
               </p>
               <p class="control">
-                <a class="button is-primary" href="https://github.com/jgthms/bulma/releases/download/0.7.1/bulma-0.7.1.zip">
-                  <span class="icon">
-                    <i class="fas fa-download"></i>
-                  </span>
-                  <span>Download</span>
+                <a class="button is-primary">
+                  Logout
                 </a>
               </p>
             </div>
@@ -191,14 +163,13 @@ export default {
         };
         this.userMassageList.push(chatUserMsg);
       }
-      if(this.currentChatRoom.id){
+      if (this.currentChatRoom.id) {
         this.closeRoomChat();
       }
       this.receives = [...chatUserMsg.msgs];
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
-      
     },
     closeChat() {
       this.receives = [];
@@ -209,7 +180,7 @@ export default {
       };
     },
     changeChatRoom(room) {
-      if(this.currentChatUser.id){
+      if (this.currentChatUser.id) {
         this.closeChat();
       }
       this.receives = [];
