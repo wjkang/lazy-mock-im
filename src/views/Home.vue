@@ -9,12 +9,23 @@
 
       <div id="navbarExampleTransparentExample" class="navbar-menu">
         <div class="navbar-start">
-          <a class="navbar-item" href="https://github.com/wjkang/lazy-mock" target="_blank">
-            lazy-mock
-          </a>
-          <a class="navbar-item" href="https://github.com/wjkang/easy-socket-node" target="_blank">
-            easy-socket
-          </a>
+          <div class="navbar-item">
+            <a class="bd-tw-button button" href="https://github.com/wjkang/lazy-mock" target="_blank">
+              lazy-mock
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://github.com/wjkang/easy-socket-node" target="_blank">
+              easy-socket
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://github.com/websockets/ws" target="_blank">
+              ws
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://bulma.io/" target="_blank">
+              bulma
+            </a>&nbsp;&nbsp;
+            <a class="bd-tw-button button" href="https://buefy.github.io/" target="_blank">
+              buefy
+            </a>
+          </div>
         </div>
 
         <div class="navbar-end">
@@ -152,14 +163,13 @@ export default {
         };
         this.userMassageList.push(chatUserMsg);
       }
-      if(this.currentChatRoom.id){
+      if (this.currentChatRoom.id) {
         this.closeRoomChat();
       }
       this.receives = [...chatUserMsg.msgs];
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
-      
     },
     closeChat() {
       this.receives = [];
@@ -170,7 +180,7 @@ export default {
       };
     },
     changeChatRoom(room) {
-      if(this.currentChatUser.id){
+      if (this.currentChatUser.id) {
         this.closeChat();
       }
       this.receives = [];
