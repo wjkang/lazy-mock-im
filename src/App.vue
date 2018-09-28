@@ -3,6 +3,15 @@
     <router-view/>
   </div>
 </template>
+<script>
+export default {
+  created() {
+    setTimeout(() => {
+      document.body.removeChild(document.getElementById("StartLoading"));
+    }, 200);
+  }
+}
+</script>
 
 <style lang="less">
 #app {
