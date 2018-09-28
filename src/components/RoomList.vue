@@ -111,7 +111,6 @@ export default {
   cursor: not-allowed;
 }
 .is-small {
-  font-size: 0.25em;
   height: 1.5em;
 }
 .menu-list-item {
