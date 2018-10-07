@@ -140,7 +140,7 @@ export default {
             ? { user: this.currentChatUser }
             : { room: this.currentChatRoom };
       }
-      client.emit("chat message", msg);
+      client.emit("chatMessage", msg);
       this.msg = "";
     },
     clearMsg() {
@@ -212,7 +212,7 @@ export default {
       this.$router.push("/login");
       return;
     }
-    client.on("chat message", data => {
+    client.on("chatMessage", data => {
       let isSelf = data.from.id == this.user.id;
       if (data.type > 0) {
         if (data.type == 1) {
