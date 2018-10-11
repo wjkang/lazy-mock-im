@@ -91,6 +91,8 @@
 <script>
 import UserList from "../components/UserList.vue";
 import RoomList from "../components/RoomList.vue";
+import { getToken, setToken } from "@/utils/auth";
+import baseUrl from "../baseUrl";
 export default {
   name: "home",
   components: {
@@ -207,11 +209,31 @@ export default {
     }
   },
   mounted() {
-    let client = this.$wsClients.get("im");
-    if (!client || !client.connected) {
+    let token = getToken();
+    if (!token) {
       this.$router.push("/login");
       return;
     }
+    let client = this.$wsClients.get("im");
+    console.log(client);
+    client.on("loginError", msg => {
+      this.$snackbar.open({
+        duration: 5000,
+        message: msg,
+        type: "is-warning",
+        position: "is-bottom",
+        actionText: "close",
+        queue: false
+      });
+      this.$router.push("/login");
+    });
+    client.on("loginSuccess", data => {
+      this.$store.commit("initAppData", {
+        user: data.user,
+        userList: data.userList,
+        roomList: data.roomList
+      });
+    });
     client.on("chatMessage", data => {
       let isSelf = data.from.id == this.user.id;
       if (data.type > 0) {
@@ -292,10 +314,23 @@ export default {
       });
       this.$store.commit("delUser", user.id);
     });
+    client.on("BusinessError", data => {
+      this.$snackbar.open({
+        duration: 5000,
+        message: data.msg,
+        type: "is-warning",
+        position: "is-bottom-left",
+        actionText: "close",
+        queue: false
+      });
+    });
+    if (!client.connected) {
+      client.connect(baseUrl.WS + "?token=" + token);
+    }
   },
   activated() {
-    let client = this.$wsClients.get("im");
-    if (!client || !client.connected) {
+    let token = getToken();
+    if (!token) {
       this.$router.push("/login");
       return;
     }

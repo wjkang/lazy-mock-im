@@ -13,12 +13,6 @@ Vue.prototype.$wsClients = EasySocket.clients;
 
 Vue.use(Buefy)
 
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
-
 new EasySocket("im")
   .openUse((context, next) => {
     console.log("open");
@@ -57,3 +51,11 @@ new EasySocket("im")
       next();
     }
   });
+
+new Vue({
+  router,
+  store,
+  render: h => h(App)
+}).$mount('#app')
+
+
