@@ -4,8 +4,8 @@ import router from './router'
 import store from './store'
 import Buefy from 'buefy'
 import 'buefy/lib/buefy.css'
-import EasySocket from "./utils/EasySocket"
-import {Toast} from 'buefy'
+import EasySocket from 'easy-socket-browser'
+import { Toast } from 'buefy'
 
 Vue.config.productionTip = false
 
