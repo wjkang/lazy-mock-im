@@ -91,7 +91,7 @@
 <script>
 import UserList from "../components/UserList.vue";
 import RoomList from "../components/RoomList.vue";
-import { getToken, setToken } from "@/utils/auth";
+import { getToken, removeToken } from "@/utils/auth";
 import baseUrl from "../baseUrl";
 export default {
   name: "home",
@@ -103,7 +103,6 @@ export default {
     return {
       msg: "",
       receives: [],
-      user: this.$store.state.user,
       currentChatUser: {
         id: "",
         name: ""
@@ -119,6 +118,9 @@ export default {
   computed: {
     userList() {
       return this.$store.state.userList;
+    },
+    user() {
+      return this.$store.state.user;
     }
   },
   methods: {
@@ -142,7 +144,13 @@ export default {
             ? { user: this.currentChatUser }
             : { room: this.currentChatRoom };
       }
-      client.emit("chatMessage", msg);
+      if (this.chatType == 0) {
+        client.emit("chatMessage", msg);
+      } else if (this.chatType == 1) {
+        client.emit("privateChatMessage", msg);
+      } else if (this.chatType == 2) {
+        client.emit("roomChatMessage", msg);
+      }
       this.msg = "";
     },
     clearMsg() {
@@ -215,8 +223,7 @@ export default {
       return;
     }
     let client = this.$wsClients.get("im");
-    console.log(client);
-    client.on("loginError", msg => {
+    client.on("connectError", msg => {
       this.$snackbar.open({
         duration: 5000,
         message: msg,
@@ -225,9 +232,10 @@ export default {
         actionText: "close",
         queue: false
       });
+      removeToken();
       this.$router.push("/login");
     });
-    client.on("loginSuccess", data => {
+    client.on("connectSuccess", data => {
       this.$store.commit("initAppData", {
         user: data.user,
         userList: data.userList,
@@ -236,60 +244,60 @@ export default {
     });
     client.on("chatMessage", data => {
       let isSelf = data.from.id == this.user.id;
-      if (data.type > 0) {
-        if (data.type == 1) {
-          if (this.currentChatUser.id != data.from.id && !isSelf) {
-            this.$store.commit("updateUserMsgCount", { ...data.from });
-            let chatUserMsg = this.userMassageList.find(item => {
-              return item.id == data.from.id;
-            });
-            if (!chatUserMsg) {
-              chatUserMsg = {
-                id: data.from.id,
-                msgs: []
-              };
-              this.userMassageList.push(chatUserMsg);
-            }
-            chatUserMsg.msgs.push({
-              name: data.from.name,
-              msg: data.msg,
-              isSelf
-            });
-          } else {
-            if (!isSelf) {
-              let chatUserMsg = this.userMassageList.find(item => {
-                return item.id == data.from.id;
-              });
-              chatUserMsg.msgs.push({
-                name: data.from.name,
-                msg: data.msg,
-                isSelf
-              });
-            }
-            this.receives.push({
-              name: data.from.name,
-              msg: data.msg,
-              isSelf
-            });
-          }
-        } else if (data.type == 2) {
-          this.receives.push({
-            name: data.from.name,
-            msg: data.msg,
-            isSelf
-          });
-        }
-      } else {
-        if (!this.currentChatUser.id) {
-          this.receives.push({
-            name: data.from.name,
-            msg: data.msg,
-            isSelf
-          });
-        }
+      if (!this.currentChatUser.id) {
+        this.receives.push({
+          name: data.from.name,
+          msg: data.msg,
+          isSelf
+        });
       }
     });
-    client.on("user login", user => {
+    client.on("privateChatMessage", data => {
+      let isSelf = data.from.id == this.user.id;
+      if (this.currentChatUser.id != data.from.id && !isSelf) {
+        this.$store.commit("updateUserMsgCount", { ...data.from });
+        let chatUserMsg = this.userMassageList.find(item => {
+          return item.id == data.from.id;
+        });
+        if (!chatUserMsg) {
+          chatUserMsg = {
+            id: data.from.id,
+            msgs: []
+          };
+          this.userMassageList.push(chatUserMsg);
+        }
+        chatUserMsg.msgs.push({
+          name: data.from.name,
+          msg: data.msg,
+          isSelf
+        });
+      } else {
+        if (!isSelf) {
+          let chatUserMsg = this.userMassageList.find(item => {
+            return item.id == data.from.id;
+          });
+          chatUserMsg.msgs.push({
+            name: data.from.name,
+            msg: data.msg,
+            isSelf
+          });
+        }
+        this.receives.push({
+          name: data.from.name,
+          msg: data.msg,
+          isSelf
+        });
+      }
+    });
+    client.on("roomChatMessage", data => {
+      let isSelf = data.from.id == this.user.id;
+      this.receives.push({
+        name: data.from.name,
+        msg: data.msg,
+        isSelf
+      });
+    });
+    client.on("userConnect", user => {
       this.$snackbar.open({
         duration: 5000,
         message: `${user.name} enter...`,
@@ -303,7 +311,7 @@ export default {
         name: user.name
       });
     });
-    client.on("user logout", user => {
+    client.on("userDisconnect", user => {
       this.$snackbar.open({
         duration: 5000,
         message: `${user.name} out...`,
