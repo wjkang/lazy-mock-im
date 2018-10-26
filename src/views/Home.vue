@@ -57,15 +57,26 @@
         <span class="tag is-primary is-medium chat-with" v-show="currentChatRoom.id">Chat In {{currentChatRoom.name}}
           <button class="delete is-small" @click="closeRoomChat"></button>
         </span>
-        <section class="msg-container">
+        <section class="msg-container" id="msg-container">
           <div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
-              <p class="title">{{item.name}}</p>
+              <p class="title">
+                {{item.name}}
+                <span class="msg-createtime">{{formatDateTime(item.createdDate)}}</span>
+              </p>
               <p class="subtitle">{{item.msg}}</p>
             </article>
           </div>
         </section>
         <section class="msg-control">
+          <b-field horizontal>
+            <!-- Label left empty for spacing -->
+            <p class="control">
+              <b-switch v-model="autoScroll">
+                autoscroll
+              </b-switch>
+            </p>
+          </b-field>
           <b-field horizontal label="chat">
             <b-input type="textarea" v-model="msg" maxlength="500">
             </b-input>
@@ -75,7 +86,7 @@
             <!-- Label left empty for spacing -->
             <p class="control">
               <button class="button is-primary" @click="submitMsg()">send</button>&nbsp;&nbsp;
-              <button class="button is-info" @click="clearMsg()">clear</button>
+              <button class="button is-info" @click="clearMsg()">clear</button>&nbsp;&nbsp;
             </p>
           </b-field>
 
@@ -92,6 +103,8 @@
 import UserList from "../components/UserList.vue";
 import RoomList from "../components/RoomList.vue";
 import { getToken, removeToken } from "@/utils/auth";
+import { formatDateTime } from "@/utils/util";
+import * as Api from "@/api";
 import baseUrl from "../baseUrl";
 export default {
   name: "home",
@@ -112,7 +125,9 @@ export default {
         name: ""
       },
       chatType: 0,
-      userMassageList: []
+      userMassageList: [],
+      broadcastMessageList: [],
+      autoScroll: true
     };
   },
   computed: {
@@ -180,14 +195,24 @@ export default {
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
+      if (this.receives.length == 0) {
+        this.fetchLatestMsg({
+          type: 1,
+          toId: user.id,
+          fromId: this.user.id
+        });
+      } else {
+        this.scroll();
+      }
     },
     closeChat() {
-      this.receives = [];
+      this.receives = [...this.broadcastMessageList];
       this.chatType = 0;
       this.currentChatUser = {
         id: "",
         name: ""
       };
+      this.scroll();
     },
     changeChatRoom(room) {
       if (this.currentChatUser.id) {
@@ -200,6 +225,10 @@ export default {
         name: ""
       };
       this.currentChatRoom = { ...room };
+      this.fetchLatestMsg({
+        type: 2,
+        toId: room.id
+      });
     },
     closeRoomChat() {
       let client = this.$wsClients.get("im");
@@ -208,12 +237,76 @@ export default {
         user: { ...this.user },
         room: { ...this.currentChatRoom }
       });
-      this.receives = [];
+      this.receives = [...this.broadcastMessageList];
       this.chatType = 0;
       this.currentChatRoom = {
         id: "",
         name: ""
       };
+      this.scroll();
+    },
+    async fetchLatestMsg(query) {
+      let res = await Api.getChatMessagePagedList({
+        pageIndex: 1,
+        pageSize: 10,
+        sortBy: "createdDate",
+        descending: "true",
+        ...query
+      });
+      for (let msg of res.data.rows.reverse()) {
+        let isSelf = msg.fromId == this.user.id;
+        this.receives.push({
+          name: msg.fromName,
+          msg: msg.message,
+          createdDate: msg.createdDate,
+          isSelf
+        });
+      }
+      this.scroll();
+    },
+    async fetchHistoryMsg() {
+      var query = {};
+      query.maxCreatedDate =
+        this.receives.length > 0
+          ? this.receives[0].createdDate
+          : new Date().getTime();
+      if (this.chatType == 1) {
+        query.type = 1;
+        query.toId = this.currentChatUser.id;
+        query.fromId = this.user.id;
+      } else if (this.chatType == 2) {
+        query.type = 2;
+        query.toId = this.currentChatRoom.id;
+      } else {
+        query.type = 0;
+      }
+      let res = await Api.getChatMessagePagedList({
+        pageIndex: 1,
+        pageSize: 10,
+        sortBy: "createdDate",
+        descending: "true",
+        ...query
+      });
+      for (let msg of res.data.rows) {
+        let isSelf = msg.fromId == this.user.id;
+        this.receives.unshift({
+          name: msg.fromName,
+          msg: msg.message,
+          createdDate: msg.createdDate,
+          isSelf
+        });
+      }
+    },
+    scroll() {
+      if (this.autoScroll) {
+        this.$nextTick(() => {
+          var div = document.getElementById("msg-container");
+          div.scrollTop = div.scrollHeight;
+        });
+      }
+    },
+    formatDateTime(time) {
+      return formatDateTime(time);
     }
   },
   mounted() {
@@ -235,22 +328,29 @@ export default {
       removeToken();
       this.$router.push("/login");
     });
-    client.on("connectSuccess", data => {
+    client.on("connectSuccess", async data => {
       this.$store.commit("initAppData", {
         user: data.user,
         userList: data.userList,
         roomList: data.roomList
       });
+      //拉取最新聊天记录
+      await this.fetchLatestMsg({ type: 0 });
+      this.broadcastMessageList = [...this.receives];
     });
     client.on("chatMessage", data => {
       let isSelf = data.from.id == this.user.id;
-      if (!this.currentChatUser.id) {
-        this.receives.push({
-          name: data.from.name,
-          msg: data.msg,
-          isSelf
-        });
+      let msg = {
+        name: data.from.name,
+        msg: data.msg,
+        createdDate: data.createdDate,
+        isSelf
+      };
+      if (!this.currentChatUser.id && !this.currentChatRoom.id) {
+        this.receives.push(msg);
+        this.scroll();
       }
+      this.broadcastMessageList.push(msg);
     });
     client.on("privateChatMessage", data => {
       let isSelf = data.from.id == this.user.id;
@@ -269,6 +369,7 @@ export default {
         chatUserMsg.msgs.push({
           name: data.from.name,
           msg: data.msg,
+          createdDate: data.createdDate,
           isSelf
         });
       } else {
@@ -279,14 +380,17 @@ export default {
           chatUserMsg.msgs.push({
             name: data.from.name,
             msg: data.msg,
+            createdDate: data.createdDate,
             isSelf
           });
         }
         this.receives.push({
           name: data.from.name,
           msg: data.msg,
+          createdDate: data.createdDate,
           isSelf
         });
+        this.scroll();
       }
     });
     client.on("roomChatMessage", data => {
@@ -294,22 +398,26 @@ export default {
       this.receives.push({
         name: data.from.name,
         msg: data.msg,
+        createdDate: data.createdDate,
         isSelf
       });
+      this.scroll();
     });
     client.on("userConnect", user => {
-      this.$snackbar.open({
-        duration: 5000,
-        message: `${user.name} enter...`,
-        type: "is-warning",
-        position: "is-bottom-left",
-        actionText: "close",
-        queue: false
-      });
-      this.$store.commit("addUser", {
-        id: user.id,
-        name: user.name
-      });
+      if (this.userList.length > 0) {
+        this.$snackbar.open({
+          duration: 5000,
+          message: `${user.name} enter...`,
+          type: "is-warning",
+          position: "is-bottom-left",
+          actionText: "close",
+          queue: false
+        });
+        this.$store.commit("addUser", {
+          id: user.id,
+          name: user.name
+        });
+      }
     });
     client.on("userDisconnect", user => {
       this.$snackbar.open({
@@ -335,6 +443,14 @@ export default {
     if (!client.connected) {
       client.connect(baseUrl.WS + "?token=" + token);
     }
+    this.$nextTick(() => {
+      var div = document.getElementById("msg-container");
+      div.addEventListener("scroll", e => {
+        if (e.target.scrollTop == 0) {
+          this.fetchHistoryMsg();
+        }
+      });
+    });
   },
   activated() {
     let token = getToken();
@@ -356,6 +472,11 @@ export default {
 <style lang="less" scoped>
 .main-container {
   padding: 20px;
+  .msg-createtime {
+    font-size: 0.7rem;
+    color: white;
+    font-weight: 300;
+  }
 }
 .left {
   max-height: 700px;

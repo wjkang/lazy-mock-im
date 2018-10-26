@@ -32,7 +32,6 @@ new EasySocket("im")
   }).remoteEmitUse((context, next) => {
     let client = context.client;
     let event = context.event;
-    console.log(client.socket.readyState)
     if (client.socket.readyState !== 1) {
       Toast.open({
         duration: 5000,

@@ -17,6 +17,14 @@ export function logout() {
   return request({
     url: '/auth/logout',
     method: 'post',
-    loading:"hourglass"
+    loading: "hourglass"
+  })
+}
+
+export function getChatMessagePagedList(query) {
+  return request({
+    url: '/chatMessage/paged',
+    method: 'get',
+    params: query
   })
 }
