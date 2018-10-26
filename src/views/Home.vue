@@ -296,6 +296,12 @@ export default {
           isSelf
         });
       }
+      if (res.data.rows.length > 0) {
+        this.$nextTick(() => {
+          var div = document.getElementById("msg-container");
+          div.scrollTop = res.data.rows.length*100;
+        });
+      }
     },
     scroll() {
       if (this.autoScroll) {
