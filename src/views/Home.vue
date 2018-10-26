@@ -2,8 +2,8 @@
   <div class="home-container">
     <nav class="navbar is-transparent">
       <div class="navbar-brand">
-        <a class="navbar-item" href="https://bulma.io">
-          <img src="https://avatars3.githubusercontent.com/u/9456046?s=460&v=4" alt="" width="28" height="28">
+        <a class="navbar-item" href="https://github.com/wjkang/lazy-mock-im">
+          <img :src="'https://api.adorable.io/avatars/80/'+user.id+'.png'" alt="" width="28" height="28">
         </a>
       </div>
 
@@ -37,7 +37,7 @@
                 </a>
               </p>
               <p class="control">
-                <a class="button is-primary">
+                <a class="button is-primary" @click="Logout">
                   Logout
                 </a>
               </p>
@@ -299,7 +299,7 @@ export default {
       if (res.data.rows.length > 0) {
         this.$nextTick(() => {
           var div = document.getElementById("msg-container");
-          div.scrollTop = res.data.rows.length*100;
+          div.scrollTop = res.data.rows.length * 100;
         });
       }
     },
@@ -313,6 +313,12 @@ export default {
     },
     formatDateTime(time) {
       return formatDateTime(time);
+    },
+    Logout() {
+      let client = this.$wsClients.get("im");
+      client.socket.close();
+      removeToken();
+      this.$router.push("/login");
     }
   },
   mounted() {
