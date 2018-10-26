@@ -20,6 +20,7 @@ new EasySocket("im")
   })
   .closeUse((context, next) => {
     console.log("close");
+    context.client.connected = false;
     next();
   }).errorUse((context, next) => {
     console.log("error", context.event);
