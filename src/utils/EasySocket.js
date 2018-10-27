@@ -13,7 +13,7 @@ export default class EasySocket extends Emitter {
         this.connected = false;
         this.autoReconnect = config.autoReconnect;
         this.forbidReconnect = config.autoReconnect;// 调用close 的时候设置forbidReconnect=false,而不是autoReconnect，避免同一个实例close后再调用connet,是否重连配置不一致
-        this.reconnectTimeout = config.reconnectTimeout || 3000;
+        this.reconnectTimeout = config.reconnectTimeout || 10000;
         this.pingTimeout = config.pingTimeout || 15000;//默认15000毫秒没有收到消息则发送ping
         this.pongTimeout = config.pongTimeout || 3000;//发送ping之后，未收到消息超时时间，默认3000毫秒
         this.pingMsg = config.pingMsg || "ping";
