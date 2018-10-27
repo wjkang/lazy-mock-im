@@ -8,7 +8,7 @@ export default class EasySocket extends Emitter {
         if (!config || !config.name) {
             throw new Error('name is required!');
         }
-        this.name = name;
+        this.name = config.name;
         this.url = config.url;
         this.connected = false;
         this.autoReconnect = config.autoReconnect;
@@ -16,7 +16,7 @@ export default class EasySocket extends Emitter {
         this.reconnectTimeout = config.reconnectTimeout || 3000;
         this.pingTimeout = config.pingTimeout || 15000;//默认15000毫秒没有收到消息则发送ping
         this.pongTimeout = config.pongTimeout || 3000;//发送ping之后，未收到消息超时时间，默认3000毫秒
-        this.pingMsg = config.pingMsg || "ping"; pongTimeout
+        this.pingMsg = config.pingMsg || "ping";
 
         this.openMiddleware = [];
         this.closeMiddleware = [];
@@ -142,6 +142,7 @@ export default class EasySocket extends Emitter {
         return this;
     }
     reconnect() {
+        console.log('reconnect...');
         //手动断开，不进行重连
         if (!this.forbidReconnect) {
             return;
