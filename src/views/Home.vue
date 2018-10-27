@@ -453,7 +453,18 @@ export default {
       });
     });
     if (!client.connected) {
-      client.connect(baseUrl.WS + "?token=" + token);
+      try {
+        client.connect(baseUrl.WS + "?token=" + token);
+      } catch (ex) {
+        this.$snackbar.open({
+          duration: 5000,
+          message: "network error!",
+          type: "is-warning",
+          position: "is-bottom-left",
+          actionText: "close",
+          queue: false
+        });
+      }
     }
     this.$nextTick(() => {
       var div = document.getElementById("msg-container");
