@@ -2,8 +2,8 @@
   <div class="home-container">
     <nav class="navbar is-transparent">
       <div class="navbar-brand">
-        <a class="navbar-item" href="https://bulma.io">
-          <img src="https://avatars3.githubusercontent.com/u/9456046?s=460&v=4" alt="" width="28" height="28">
+        <a class="navbar-item" href="https://github.com/wjkang/lazy-mock-im">
+          <img :src="'https://api.adorable.io/avatars/80/'+user.id+'.png'" alt="" width="28" height="28">
         </a>
       </div>
 
@@ -37,7 +37,7 @@
                 </a>
               </p>
               <p class="control">
-                <a class="button is-primary">
+                <a class="button is-primary" @click="Logout">
                   Logout
                 </a>
               </p>
@@ -57,15 +57,26 @@
         <span class="tag is-primary is-medium chat-with" v-show="currentChatRoom.id">Chat In {{currentChatRoom.name}}
           <button class="delete is-small" @click="closeRoomChat"></button>
         </span>
-        <section class="msg-container">
+        <section class="msg-container" id="msg-container">
           <div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
-              <p class="title">{{item.name}}</p>
+              <p class="title">
+                {{item.name}}
+                <span class="msg-createtime">{{formatDateTime(item.createdDate)}}</span>
+              </p>
               <p class="subtitle">{{item.msg}}</p>
             </article>
           </div>
         </section>
         <section class="msg-control">
+          <b-field horizontal>
+            <!-- Label left empty for spacing -->
+            <p class="control">
+              <b-switch v-model="autoScroll">
+                autoscroll
+              </b-switch>
+            </p>
+          </b-field>
           <b-field horizontal label="chat">
             <b-input type="textarea" v-model="msg" maxlength="500">
             </b-input>
@@ -75,7 +86,7 @@
             <!-- Label left empty for spacing -->
             <p class="control">
               <button class="button is-primary" @click="submitMsg()">send</button>&nbsp;&nbsp;
-              <button class="button is-info" @click="clearMsg()">clear</button>
+              <button class="button is-info" @click="clearMsg()">clear</button>&nbsp;&nbsp;
             </p>
           </b-field>
 
@@ -91,6 +102,10 @@
 <script>
 import UserList from "../components/UserList.vue";
 import RoomList from "../components/RoomList.vue";
+import { getToken, removeToken } from "@/utils/auth";
+import { formatDateTime } from "@/utils/util";
+import * as Api from "@/api";
+import baseUrl from "../baseUrl";
 export default {
   name: "home",
   components: {
@@ -101,7 +116,6 @@ export default {
     return {
       msg: "",
       receives: [],
-      user: this.$store.state.user,
       currentChatUser: {
         id: "",
         name: ""
@@ -111,12 +125,17 @@ export default {
         name: ""
       },
       chatType: 0,
-      userMassageList: []
+      userMassageList: [],
+      broadcastMessageList: [],
+      autoScroll: true
     };
   },
   computed: {
     userList() {
       return this.$store.state.userList;
+    },
+    user() {
+      return this.$store.state.user;
     }
   },
   methods: {
@@ -140,7 +159,13 @@ export default {
             ? { user: this.currentChatUser }
             : { room: this.currentChatRoom };
       }
-      client.emit("chatMessage", msg);
+      if (this.chatType == 0) {
+        client.emit("chatMessage", msg);
+      } else if (this.chatType == 1) {
+        client.emit("privateChatMessage", msg);
+      } else if (this.chatType == 2) {
+        client.emit("roomChatMessage", msg);
+      }
       this.msg = "";
     },
     clearMsg() {
@@ -170,14 +195,24 @@ export default {
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
+      if (this.receives.length == 0) {
+        this.fetchLatestMsg({
+          type: 1,
+          toId: user.id,
+          fromId: this.user.id
+        });
+      } else {
+        this.scroll();
+      }
     },
     closeChat() {
-      this.receives = [];
+      this.receives = [...this.broadcastMessageList];
       this.chatType = 0;
       this.currentChatUser = {
         id: "",
         name: ""
       };
+      this.scroll();
     },
     changeChatRoom(room) {
       if (this.currentChatUser.id) {
@@ -190,6 +225,10 @@ export default {
         name: ""
       };
       this.currentChatRoom = { ...room };
+      this.fetchLatestMsg({
+        type: 2,
+        toId: room.id
+      });
     },
     closeRoomChat() {
       let client = this.$wsClients.get("im");
@@ -198,90 +237,202 @@ export default {
         user: { ...this.user },
         room: { ...this.currentChatRoom }
       });
-      this.receives = [];
+      this.receives = [...this.broadcastMessageList];
       this.chatType = 0;
       this.currentChatRoom = {
         id: "",
         name: ""
       };
+      this.scroll();
+    },
+    async fetchLatestMsg(query) {
+      let res = await Api.getChatMessagePagedList({
+        pageIndex: 1,
+        pageSize: 10,
+        sortBy: "createdDate",
+        descending: "true",
+        ...query
+      });
+      for (let msg of res.data.rows.reverse()) {
+        let isSelf = msg.fromId == this.user.id;
+        this.receives.push({
+          name: msg.fromName,
+          msg: msg.message,
+          createdDate: msg.createdDate,
+          isSelf
+        });
+      }
+      this.scroll();
+    },
+    async fetchHistoryMsg() {
+      var query = {};
+      query.maxCreatedDate =
+        this.receives.length > 0
+          ? this.receives[0].createdDate
+          : new Date().getTime();
+      if (this.chatType == 1) {
+        query.type = 1;
+        query.toId = this.currentChatUser.id;
+        query.fromId = this.user.id;
+      } else if (this.chatType == 2) {
+        query.type = 2;
+        query.toId = this.currentChatRoom.id;
+      } else {
+        query.type = 0;
+      }
+      let res = await Api.getChatMessagePagedList({
+        pageIndex: 1,
+        pageSize: 10,
+        sortBy: "createdDate",
+        descending: "true",
+        ...query
+      });
+      for (let msg of res.data.rows) {
+        let isSelf = msg.fromId == this.user.id;
+        this.receives.unshift({
+          name: msg.fromName,
+          msg: msg.message,
+          createdDate: msg.createdDate,
+          isSelf
+        });
+      }
+      if (res.data.rows.length > 0) {
+        this.$nextTick(() => {
+          var div = document.getElementById("msg-container");
+          div.scrollTop = res.data.rows.length * 100;
+        });
+      }
+    },
+    scroll() {
+      if (this.autoScroll) {
+        this.$nextTick(() => {
+          var div = document.getElementById("msg-container");
+          div.scrollTop = div.scrollHeight;
+        });
+      }
+    },
+    formatDateTime(time) {
+      return formatDateTime(time);
+    },
+    Logout() {
+      let client = this.$wsClients.get("im");
+      client.close();
+      removeToken();
+      this.$router.push("/login");
     }
   },
   mounted() {
-    let client = this.$wsClients.get("im");
-    if (!client || !client.connected) {
+    let token = getToken();
+    if (!token) {
       this.$router.push("/login");
       return;
     }
-    client.on("chatMessage", data => {
-      let isSelf = data.from.id == this.user.id;
-      if (data.type > 0) {
-        if (data.type == 1) {
-          if (this.currentChatUser.id != data.from.id && !isSelf) {
-            this.$store.commit("updateUserMsgCount", { ...data.from });
-            let chatUserMsg = this.userMassageList.find(item => {
-              return item.id == data.from.id;
-            });
-            if (!chatUserMsg) {
-              chatUserMsg = {
-                id: data.from.id,
-                msgs: []
-              };
-              this.userMassageList.push(chatUserMsg);
-            }
-            chatUserMsg.msgs.push({
-              name: data.from.name,
-              msg: data.msg,
-              isSelf
-            });
-          } else {
-            if (!isSelf) {
-              let chatUserMsg = this.userMassageList.find(item => {
-                return item.id == data.from.id;
-              });
-              chatUserMsg.msgs.push({
-                name: data.from.name,
-                msg: data.msg,
-                isSelf
-              });
-            }
-            this.receives.push({
-              name: data.from.name,
-              msg: data.msg,
-              isSelf
-            });
-          }
-        } else if (data.type == 2) {
-          this.receives.push({
-            name: data.from.name,
-            msg: data.msg,
-            isSelf
-          });
-        }
-      } else {
-        if (!this.currentChatUser.id) {
-          this.receives.push({
-            name: data.from.name,
-            msg: data.msg,
-            isSelf
-          });
-        }
-      }
-    });
-    client.on("user login", user => {
+    let client = this.$wsClients.get("im");
+    client.on("connectError", msg => {
       this.$snackbar.open({
         duration: 5000,
-        message: `${user.name} enter...`,
+        message: msg,
         type: "is-warning",
-        position: "is-bottom-left",
+        position: "is-bottom",
         actionText: "close",
         queue: false
       });
-      this.$store.commit("addUser", {
-        id: user.id,
-        name: user.name
-      });
+      removeToken();
+      client.close();
+      this.$router.push("/login");
     });
-    client.on("user logout", user => {
+    client.on("connectSuccess", async data => {
+      this.$store.commit("initAppData", {
+        user: data.user,
+        userList: data.userList,
+        roomList: data.roomList
+      });
+      //拉取最新聊天记录
+      await this.fetchLatestMsg({ type: 0 });
+      this.broadcastMessageList = [...this.receives];
+    });
+    client.on("chatMessage", data => {
+      let isSelf = data.from.id == this.user.id;
+      let msg = {
+        name: data.from.name,
+        msg: data.msg,
+        createdDate: data.createdDate,
+        isSelf
+      };
+      if (!this.currentChatUser.id && !this.currentChatRoom.id) {
+        this.receives.push(msg);
+        this.scroll();
+      }
+      this.broadcastMessageList.push(msg);
+    });
+    client.on("privateChatMessage", data => {
+      let isSelf = data.from.id == this.user.id;
+      if (this.currentChatUser.id != data.from.id && !isSelf) {
+        this.$store.commit("updateUserMsgCount", { ...data.from });
+        let chatUserMsg = this.userMassageList.find(item => {
+          return item.id == data.from.id;
+        });
+        if (!chatUserMsg) {
+          chatUserMsg = {
+            id: data.from.id,
+            msgs: []
+          };
+          this.userMassageList.push(chatUserMsg);
+        }
+        chatUserMsg.msgs.push({
+          name: data.from.name,
+          msg: data.msg,
+          createdDate: data.createdDate,
+          isSelf
+        });
+      } else {
+        if (!isSelf) {
+          let chatUserMsg = this.userMassageList.find(item => {
+            return item.id == data.from.id;
+          });
+          chatUserMsg.msgs.push({
+            name: data.from.name,
+            msg: data.msg,
+            createdDate: data.createdDate,
+            isSelf
+          });
+        }
+        this.receives.push({
+          name: data.from.name,
+          msg: data.msg,
+          createdDate: data.createdDate,
+          isSelf
+        });
+        this.scroll();
+      }
+    });
+    client.on("roomChatMessage", data => {
+      let isSelf = data.from.id == this.user.id;
+      this.receives.push({
+        name: data.from.name,
+        msg: data.msg,
+        createdDate: data.createdDate,
+        isSelf
+      });
+      this.scroll();
+    });
+    client.on("userConnect", user => {
+      if (this.userList.length > 0) {
+        this.$snackbar.open({
+          duration: 5000,
+          message: `${user.name} enter...`,
+          type: "is-warning",
+          position: "is-bottom-left",
+          actionText: "close",
+          queue: false
+        });
+        this.$store.commit("addUser", {
+          id: user.id,
+          name: user.name
+        });
+      }
+    });
+    client.on("userDisconnect", user => {
       this.$snackbar.open({
         duration: 5000,
         message: `${user.name} out...`,
@@ -292,10 +443,42 @@ export default {
       });
       this.$store.commit("delUser", user.id);
     });
+    client.on("BusinessError", data => {
+      this.$snackbar.open({
+        duration: 5000,
+        message: data.msg,
+        type: "is-warning",
+        position: "is-bottom-left",
+        actionText: "close",
+        queue: false
+      });
+    });
+    if (!client.connected) {
+      try {
+        client.connect(baseUrl.WS + "?token=" + token);
+      } catch (ex) {
+        this.$snackbar.open({
+          duration: 5000,
+          message: "network error!",
+          type: "is-warning",
+          position: "is-bottom-left",
+          actionText: "close",
+          queue: false
+        });
+      }
+    }
+    this.$nextTick(() => {
+      var div = document.getElementById("msg-container");
+      div.addEventListener("scroll", e => {
+        if (e.target.scrollTop == 0) {
+          this.fetchHistoryMsg();
+        }
+      });
+    });
   },
   activated() {
-    let client = this.$wsClients.get("im");
-    if (!client || !client.connected) {
+    let token = getToken();
+    if (!token) {
       this.$router.push("/login");
       return;
     }
@@ -313,6 +496,11 @@ export default {
 <style lang="less" scoped>
 .main-container {
   padding: 20px;
+  .msg-createtime {
+    font-size: 0.7rem;
+    color: white;
+    font-weight: 300;
+  }
 }
 .left {
   max-height: 700px;

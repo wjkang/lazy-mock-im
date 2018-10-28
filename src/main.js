@@ -13,13 +13,11 @@ Vue.prototype.$wsClients = EasySocket.clients;
 
 Vue.use(Buefy)
 
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
-
-new EasySocket("im")
+new EasySocket({
+  name: 'im',
+  autoReconnect: true,
+  pingMsg: '{"type":"event","event":"ping","args":"ping"}'
+})
   .openUse((context, next) => {
     console.log("open");
     next();
@@ -35,10 +33,19 @@ new EasySocket("im")
       context.client.emit(context.res.event, context.res.args, true);
     }
     next();
+  }).reconnectUse((context, next) => {
+    Toast.open({
+      duration: 5000,
+      message: "reconnect...",
+      type: "is-warning",
+      position: "is-bottom-right",
+      actionText: "close",
+      queue: false
+    });
+    next();
   }).remoteEmitUse((context, next) => {
     let client = context.client;
     let event = context.event;
-    console.log(client.socket.readyState)
     if (client.socket.readyState !== 1) {
       Toast.open({
         duration: 5000,
@@ -57,3 +64,10 @@ new EasySocket("im")
       next();
     }
   });
+
+new Vue({
+  router,
+  store,
+  render: h => h(App)
+}).$mount('#app')
+

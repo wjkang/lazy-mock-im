@@ -1,10 +1,12 @@
 <template>
   <div class="login-container">
     <section>
-      <b-field horizontal label="Name">
+      <b-field horizontal label="username">
         <b-input type="text" v-model="name"></b-input>
       </b-field>
-
+      <b-field horizontal label="password">
+        <b-input type="text" v-model="password"></b-input>
+      </b-field>
       <b-field horizontal>
         <!-- Label left empty for spacing -->
         <p class="control">
@@ -15,22 +17,26 @@
       </b-field>
 
     </section>
+    <b-loading :active.sync="isLoading"></b-loading>
   </div>
 </template>
 <script>
-import baseUrl from '../baseUrl';
+import { loginByUsername } from "@/api";
+import { getToken, setToken } from "@/utils/auth";
 export default {
   data: function() {
     return {
-      name: ""
+      name: "",
+      password: "",
+      isLoading: false
     };
   },
   methods: {
-    submit() {
-      if (this.name == "") {
+    async submit() {
+      if (this.name == "" || this.password == "") {
         this.$snackbar.open({
           duration: 5000,
-          message: "请输入名称!",
+          message: "请输入账号密码!",
           type: "is-warning",
           position: "is-bottom",
           actionText: "close",
@@ -38,34 +44,33 @@ export default {
         });
         return;
       }
-      let client = this.$wsClients.get("im");
-      client.connect(baseUrl+"?user=" + this.name);
+      this.isLoading = true;
+      try {
+        let loginResult = await loginByUsername(this.name, this.password);
+        setToken(loginResult.data.accessToken);
+        this.$router.push("/");
+        this.isLoading = false;
+        return;
+      } catch (e) {
+        this.isLoading = false;
+        this.$snackbar.open({
+          duration: 5000,
+          message: e,
+          type: "is-warning",
+          position: "is-bottom",
+          actionText: "close",
+          queue: false
+        });
+        return;
+      }
     }
   },
   mounted() {
-    let client = this.$wsClients.get("im");
-    if (client && client.connected) {
+    let token = getToken();
+    if (token) {
       this.$router.push("/");
       return;
     }
-    client.on("loginError", msg => {
-      this.$snackbar.open({
-        duration: 5000,
-        message: msg,
-        type: "is-warning",
-        position: "is-bottom",
-        actionText: "close",
-        queue: false
-      });
-    });
-    client.on("loginSuccess", data => {
-      this.$store.commit("initAppData", {
-        user: data.user,
-        userList: data.userList,
-        roomList:data.roomList
-      });
-      this.$router.push("/");
-    });
   }
 };
 </script>
