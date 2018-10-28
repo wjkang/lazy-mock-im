@@ -23,12 +23,14 @@ export default class EasySocket extends Emitter {
         this.messageMiddleware = [];
         this.errorMiddleware = [];
         this.remoteEmitMiddleware = [];
+        this.reconnectMiddleware = [];
 
         this.openFn = Promise.resolve();
         this.closeFn = Promise.resolve();
         this.messageFn = Promise.resolve();
         this.errorFn = Promise.resolve();
         this.remoteEmitFn = Promise.resolve();
+        this.reconnectFn = Promise.resolve();
 
         EasySocket.clients.set(this.name, this);
     }
@@ -61,6 +63,13 @@ export default class EasySocket extends Emitter {
         this.remoteEmitMiddleware.push(fn);
         if (runtime) {
             this.remoteEmitFn = compose(this.remoteEmitMiddleware);
+        }
+        return this;
+    }
+    reconnectUse(fn, runtime) {
+        this.reconnectMiddleware.push(fn);
+        if (runtime) {
+            this.reconnectFn = compose(this.reconnectMiddleware);
         }
         return this;
     }
@@ -138,17 +147,25 @@ export default class EasySocket extends Emitter {
         });
 
         this.remoteEmitFn = compose(this.remoteEmitMiddleware);
+        this.reconnectFn = compose(this.reconnectMiddleware);
         this.connected = true;
         return this;
     }
     reconnect() {
-        console.log('reconnect...');
         //手动断开，不进行重连
-        if (!this.forbidReconnect) {
+        if (this.lockReconnect || !this.forbidReconnect) {
             return;
         }
+        this.lockReconnect = true;//new WebSocket失败后重连，旧的WebSocket实例会触发error导致再次重连，旧的实例回收也会触发close导致重连
         //一段时间后重新连接
         setTimeout(() => {
+            let context = { client: this };
+            this.reconnectFn(context).then(() => {
+
+            }).catch(error => {
+                console.log(error)
+            });
+            this.lockReconnect = false;
             this.connect();
         }, this.reconnectTimeout);
     }

@@ -316,7 +316,7 @@ export default {
     },
     Logout() {
       let client = this.$wsClients.get("im");
-      client.socket.close();
+      client.close();
       removeToken();
       this.$router.push("/login");
     }
@@ -338,6 +338,7 @@ export default {
         queue: false
       });
       removeToken();
+      client.close();
       this.$router.push("/login");
     });
     client.on("connectSuccess", async data => {

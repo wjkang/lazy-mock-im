@@ -4,8 +4,7 @@ import router from './router'
 import store from './store'
 import Buefy from 'buefy'
 import 'buefy/lib/buefy.css'
-//import EasySocket from 'easy-socket-browser'
-import EasySocket from './utils/EasySocket'
+import EasySocket from 'easy-socket-browser'
 import { Toast } from 'buefy'
 
 Vue.config.productionTip = false
@@ -16,7 +15,8 @@ Vue.use(Buefy)
 
 new EasySocket({
   name: 'im',
-  autoReconnect: true
+  autoReconnect: true,
+  pingMsg: '{"type":"event","event":"ping","args":"ping"}'
 })
   .openUse((context, next) => {
     console.log("open");
@@ -32,6 +32,16 @@ new EasySocket({
     if (context.res.type === 'event') {
       context.client.emit(context.res.event, context.res.args, true);
     }
+    next();
+  }).reconnectUse((context, next) => {
+    Toast.open({
+      duration: 5000,
+      message: "reconnect...",
+      type: "is-warning",
+      position: "is-bottom-right",
+      actionText: "close",
+      queue: false
+    });
     next();
   }).remoteEmitUse((context, next) => {
     let client = context.client;
