@@ -58,7 +58,7 @@
           <button class="delete is-small" @click="closeRoomChat"></button>
         </span>
         <section class="msg-container" id="msg-container">
-          <div class="tile is-parent is-vertical">
+          <!--<div class="tile is-parent is-vertical">
             <article class="tile is-child notification is-primary" :class="{'self-msg is-success':item.isSelf}" v-for="(item,index) in receives" :key="index">
               <p class="title">
                 {{item.name}}
@@ -66,7 +66,19 @@
               </p>
               <p class="subtitle">{{item.msg}}</p>
             </article>
-          </div>
+          </div>-->
+          <ul class="chat-content">
+            <li class="chat-item" :class="{'self-msg':item.isSelf,'other-msg':!item.isSelf}" v-for="(item,index) in receives" :key="index">
+              <span class="chat-item-left" :style="{'background-image':'url(https://api.adorable.io/avatars/50/'+item.name+'.png)'}">
+              </span>
+              <p class="chat-item-info">
+                {{item.name}}
+                <span class="msg-createtime">{{formatDateTime(item.createdDate)}}</span>
+              </p>
+              {{item.msg}}
+              <span class="chat-item-right"></span>
+            </li>
+          </ul>
         </section>
         <section class="msg-control">
           <b-field horizontal>
@@ -77,7 +89,7 @@
               </b-switch>
             </p>
           </b-field>
-          <b-field horizontal label="chat">
+          <b-field horizontal label="">
             <b-input type="textarea" v-model="msg" maxlength="500">
             </b-input>
           </b-field>
@@ -191,17 +203,18 @@ export default {
       if (this.currentChatRoom.id) {
         this.closeRoomChat();
       }
-      this.receives = [...chatUserMsg.msgs];
+      this.receives = [];
       this.chatType = 1;
       this.currentChatUser = { ...user };
       this.$store.commit("resetUserMsgCount", { ...user });
-      if (this.receives.length == 0) {
+      if (chatUserMsg.msgs.length == 0) {
         this.fetchLatestMsg({
           type: 1,
           toId: user.id,
           fromId: this.user.id
         });
       } else {
+        this.receives = [...chatUserMsg.msgs];
         this.scroll();
       }
     },
@@ -496,10 +509,15 @@ export default {
 <style lang="less" scoped>
 .main-container {
   padding: 20px;
-  .msg-createtime {
-    font-size: 0.7rem;
-    color: white;
+  .chat-item-info {
+    font-size: 1rem;
+    color: #776969;
     font-weight: 300;
+    .msg-createtime {
+      font-size: 0.7rem;
+      color: #776969;
+      font-weight: 300;
+    }
   }
 }
 .left {
@@ -512,29 +530,118 @@ export default {
   .chat-with {
     position: absolute;
     z-index: 999;
-    opacity: 0.3;
+    opacity: 0.7;
     right: 10px;
   }
 }
 .msg-control {
   padding-top: 20px;
   padding-right: 50px;
+  textarea {
+    width: 100% !important;
+    height: 48px !important;
+    background: none !important;
+    color: #0ad5c1 !important;
+    border: 0 !important;
+    border-bottom-color: currentcolor !important;
+    border-bottom-style: none !important;
+    border-bottom-width: 0px !important;
+    border-bottom: 1px solid rgba(25, 147, 147, 0.2) !important;
+    outline: none !important;
+  }
 }
 .msg-container {
   text-align: left;
-  background-color: #f1eef5;
   border-radius: 10px;
   max-height: 500px;
   height: 500px;
   padding: 10px;
   margin-top: 35px;
   overflow: auto;
-  article {
-    width: 80%;
+  overflow-x: hidden;
+}
+
+.chat-content {
+  list-style: none;
+  .chat-item {
+    position: relative;
+    clear: both;
+    display: inline-block;
+    padding: 16px 40px 16px 20px;
+    margin: 0 0 20px 0;
+    margin-right: 0px;
+    border-radius: 10px;
+    background-color: rgba(25, 147, 147, 0.2);
+  }
+  .other-msg {
+    animation: show-chat-other 0.15s 1 ease-in;
+    float: left;
+    margin-left: 80px;
+    color: #0ec879;
+    .chat-item-left {
+      position: absolute;
+      top: 0;
+      left: -80px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50px;
+      content: "";
+    }
+    .chat-item-right {
+      border-left: 15px solid transparent;
+      left: -15px;
+      position: absolute;
+      top: 15px;
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 15px solid rgba(25, 147, 147, 0.2);
+    }
+  }
+  .self-msg {
+    animation: show-chat-self 0.15s 1 ease-in;
+    float: right;
+    margin-right: 80px;
+    color: #0ad5c1;
+    .chat-item-left {
+      position: absolute;
+      top: 0;
+      right: -80px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50px;
+      content: "";
+    }
+    .chat-item-right {
+      border-right: 15px solid transparent;
+      right: -15px;
+      position: absolute;
+      top: 15px;
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 15px solid rgba(25, 147, 147, 0.2);
+    }
   }
 }
-.self-msg {
-  align-self: flex-end;
-  text-align: right;
+
+// Animation
+// --------------------------------------
+@keyframes show-chat-other {
+  0% {
+    margin-left: -480px;
+  }
+  100% {
+    margin-left: 0;
+  }
+}
+
+@keyframes show-chat-self {
+  0% {
+    margin-right: -480px;
+  }
+  100% {
+    margin-right: 0;
+  }
 }
 </style>
