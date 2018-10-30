@@ -77,7 +77,7 @@
               </b-switch>
             </p>
           </b-field>
-          <b-field horizontal label="chat">
+          <b-field horizontal label="">
             <b-input type="textarea" v-model="msg" maxlength="500">
             </b-input>
           </b-field>
@@ -512,7 +512,7 @@ export default {
   .chat-with {
     position: absolute;
     z-index: 999;
-    opacity: 0.3;
+    opacity: 0.7;
     right: 10px;
   }
 }

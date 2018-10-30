@@ -64,6 +64,12 @@ export default {
 .menu-list li {
   width: 80%;
 }
+.menu-list a {
+  color: white;
+}
+.menu-label{
+    color: white;
+}
 .is-inactive {
   cursor: not-allowed;
 }

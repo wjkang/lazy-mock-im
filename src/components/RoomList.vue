@@ -107,6 +107,12 @@ export default {
 .menu-list li {
   width: 80%;
 }
+.menu-label{
+  color: white;
+}
+.menu-list a {
+  color: white;
+}
 .is-inactive {
   cursor: not-allowed;
 }
@@ -119,6 +125,7 @@ export default {
     position: absolute;
     right: 0;
     top: 0;
+    color: black;
   }
 }
 </style>
